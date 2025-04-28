@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"Z:/DigiviceProto/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

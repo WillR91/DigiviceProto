@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="Z:\DigiviceProto\build\CMakeFiles\cd769aeb877704b4f8bee93cf4d6b87c\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{12FE8DF3-D56C-3FEA-8E44-F808F604015A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
