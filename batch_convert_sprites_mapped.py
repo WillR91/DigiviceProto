@@ -3,7 +3,7 @@ import os
 import glob
 from PIL import Image
 import re
-import sys # <<< Add for stderr
+import sys
 
 # --- Configuration ---
 
@@ -11,12 +11,15 @@ import sys # <<< Add for stderr
 # This folder should be in the same directory as this script.
 input_folder = "separated_sprites_input" # <<< ADJUST if your input folder name is different
 
-# Folder where the output .h files will be saved
-# Should point correctly to your project's assets folder
-# Example assumes assets folder is ONE level up from script directory
-# and then inside the project folder (e.g. DigiviceProto/assets)
-# ADJUST THIS RELATIVE PATH TO MATCH YOUR STRUCTURE
-output_folder = "Z:\DigiviceProto\assets" # <<< EXAMPLE PATH, ADJUST
+# --- IMPORTANT PATH CONFIGURATION ---
+# Define the *absolute* path to your C++ project's assets folder
+# Use forward slashes or raw strings for Windows paths
+# Example: output_folder_absolute = r"Z:\DigiviceProto\assets"
+# Example: output_folder_absolute = "Z:/DigiviceProto/assets"
+# Make sure this path is CORRECT for your system
+output_folder_absolute = r"Z:\DigiviceProto\assets" # <<< USE RAW STRING FOR WINDOWS PATH
+# -------------------------------------
+
 
 # --- Animation Mapping ---
 # Maps the input frame index (0-9) to a tuple: (ActionName, ActionFrameIndex)
@@ -47,23 +50,35 @@ def sanitize_for_c(name_part):
     # Prevent names starting/ending with underscore or double underscores
     name = name.strip('_')
     name = re.sub(r'_{2,}', '_', name)
-    return name.upper() # Conventionally, defines/macros are uppercase
+    # Ensure name is not empty after sanitization
+    if not name:
+        name = "_"
+    return name # Return mixed case for variable prefix
 # ----------------------------------------------------------
 
 try:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     input_dir_path = os.path.join(script_dir, input_folder)
-    # Construct absolute output path for clarity
-    output_dir_path_relative = os.path.join(script_dir, output_folder)
-    output_dir_path_absolute = os.path.abspath(output_dir_path_relative)
 
+    # Validate input directory
     if not os.path.isdir(input_dir_path):
          print(f"Error: Input directory not found: {input_dir_path}", file=sys.stderr)
          sys.exit(1)
 
-    os.makedirs(output_dir_path_absolute, exist_ok=True) # Use absolute path
+    # Validate and create output directory (using the absolute path directly)
+    if not os.path.isdir(output_folder_absolute):
+        print(f"Output directory not found, attempting to create: {output_folder_absolute}")
+        try:
+            os.makedirs(output_folder_absolute, exist_ok=True)
+        except OSError as e:
+            print(f"Error: Could not create output directory: {output_folder_absolute}\n{e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        print(f"Output directory found: {output_folder_absolute}")
+
+
     print(f"Input folder: {input_dir_path}")
-    print(f"Output folder: {output_dir_path_absolute}") # Print absolute path
+    print(f"Output folder: {output_folder_absolute}")
 
     search_pattern = os.path.join(input_dir_path, "*.png")
     png_files = glob.glob(search_pattern)
@@ -85,6 +100,7 @@ try:
         match = re.match(r'^(.*)_(\d+)\.png$', base_filename, re.IGNORECASE) # Ignore case
         if not match:
             print(f"  Skipping '{base_filename}': Does not match 'Name_Number.png' format.", file=sys.stderr)
+            error_count += 1 # Count skipped file as an error/issue
             continue
 
         character_name_raw = match.group(1)
@@ -92,6 +108,7 @@ try:
             frame_number = int(match.group(2))
         except ValueError:
             print(f"  Skipping '{base_filename}': Frame number part '{match.group(2)}' not integer.", file=sys.stderr)
+            error_count += 1
             continue
 
         # Look up action and new index
@@ -99,14 +116,18 @@ try:
             action_name_raw, action_frame_index = animation_mapping[frame_number]
 
             # --- Sanitize names for C/Filesystem ---
-            # Keep original case for variable names, uppercase for defines
-            character_name_var = sanitize_for_c(character_name_raw).capitalize() # e.g., Agumon
-            action_name_var = sanitize_for_c(action_name_raw).capitalize()       # e.g., Idle
-            define_prefix = f"{character_name_var.upper()}_{action_name_var.upper()}_{action_frame_index}" # e.g., AGUMON_IDLE_0
-            variable_name = f"{character_name_var}_{action_name_var}_{action_frame_index}_data" # e.g., Agumon_Idle_0_data
-            output_base_name = f"{character_name_var}_{action_name_var}_{action_frame_index}" # e.g., Agumon_Idle_0
+            # Keep original case for variable names (more readable), uppercase for defines
+            character_name_sanitized = sanitize_for_c(character_name_raw).capitalize() # e.g., Agumon
+            action_name_sanitized = sanitize_for_c(action_name_raw).capitalize()       # e.g., Idle
+            # Ensure names are not empty after sanitize_for_c might strip underscores
+            if not character_name_sanitized: character_name_sanitized = "Sprite"
+            if not action_name_sanitized: action_name_sanitized = "Action"
+
+            define_prefix = f"{character_name_sanitized.upper()}_{action_name_sanitized.upper()}_{action_frame_index}" # e.g., AGUMON_IDLE_0
+            variable_name = f"{character_name_sanitized}_{action_name_sanitized}_{action_frame_index}_data" # e.g., Agumon_Idle_0_data
+            output_base_name = f"{character_name_sanitized}_{action_name_sanitized}_{action_frame_index}" # e.g., Agumon_Idle_0
             output_h_filename = f"{output_base_name}.h"
-            output_path = os.path.join(output_dir_path_absolute, output_h_filename) # Use absolute path
+            output_path = os.path.join(output_folder_absolute, output_h_filename) # Use absolute path
             include_guard = f"{define_prefix}_H" # Define include guard name
             # ---------------------------------------------
 
@@ -135,36 +156,45 @@ try:
                     f.write(f"#ifndef {include_guard}\n")
                     f.write(f"#define {include_guard}\n\n")
 
-                    # --- Include Standard Integer Types --- <<<< CORRECT INCLUDE
+                    # --- Include Standard Integer Types ---
                     f.write("#include <cstdint>\n\n")
 
                     # --- Defines for Width and Height ---
                     f.write(f"#define {define_prefix}_WIDTH {width}\n")
                     f.write(f"#define {define_prefix}_HEIGHT {height}\n\n")
 
-                    # --- Array Definition --- <<<< CORRECTED SYNTAX
+                    # --- Array Definition ---
                     f.write(f"// RGB565 format pixel data\n")
                     f.write(f"const uint16_t {variable_name}[] = {{\n  ") # Use [] for auto-sizing
 
-                    # --- Pixel Data Loop (Same as before) ---
+                    # --- Pixel Data Loop ---
                     count = 0
+                    num_pixels = len(pixels_rgba)
                     for i, p in enumerate(pixels_rgba):
                         r, g, b, a = p
                         if a < alpha_threshold:
                             rgb565 = key_color_565
                         else:
-                            rgb565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
+                            # Clamp values just in case (though PIL usually handles this)
+                            r_clamped = max(0, min(r, 255))
+                            g_clamped = max(0, min(g, 255))
+                            b_clamped = max(0, min(b, 255))
+                            rgb565 = ((r_clamped >> 3) << 11) | ((g_clamped >> 2) << 5) | (b_clamped >> 3)
 
                         f.write(f"0x{rgb565:04X}")
-                        if i < len(pixels_rgba) - 1: f.write(",")
+                        if i < num_pixels - 1: f.write(",") # Add comma if not the last pixel
                         count += 1
-                        if count % 12 == 0: # Newline every 12 pixels
-                             f.write("\n  ")
-                        elif i < len(pixels_rgba) - 1:
-                            f.write(" ") # Space between pixels on same line
+                        # Formatting: Newline every 12 pixels or if it's the last pixel
+                        if count % 12 == 0 or i == num_pixels - 1:
+                             f.write("\n")
+                             if i < num_pixels - 1: # Add indentation if not the very last line
+                                 f.write("  ")
+                        elif i < num_pixels - 1: # Add space if not last pixel and not end of line
+                            f.write(" ")
 
                     # --- End Array and Include Guard ---
-                    f.write("\n}}; // End of {variable_name}\n\n") # Closing brace and semicolon for array
+                    # Use f-string correctly for variable name in comment
+                    f.write(f"}}; // End of {variable_name}\n\n")
                     f.write(f"#endif // {include_guard}\n") # Include guard end
 
                 print(f"  Successfully generated '{output_h_filename}'")
