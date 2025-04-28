@@ -4,8 +4,8 @@
 #include "platform/pc/PCDisplay.h" // Include PC implementations FOR NOW
 #include "platform/pc/PCInput.h"   // to allow creating them
 
-#include <SDL2/SDL.h> // Still need SDL for GetTicks, Delay etc. FOR NOW
-#include <SDL2/SDL_log.h>
+#include <SDL.h> // Still need SDL for GetTicks, Delay etc. FOR NOW
+#include <SDL_log.h>
 #include <cmath> // For fmod
 #include <stdexcept>
 

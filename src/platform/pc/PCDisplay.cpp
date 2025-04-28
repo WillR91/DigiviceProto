@@ -1,5 +1,5 @@
 #include "platform/pc/PCDisplay.h" // <<< Include the correct header
-#include <SDL2/SDL_log.h>
+#include <SDL_log.h>
 #include <stdexcept>
 
 PCDisplay::PCDisplay() : window(nullptr), renderer(nullptr), texture(nullptr), screenWidth(0), screenHeight(0) {}

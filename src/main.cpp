@@ -1,5 +1,5 @@
 #include "Game.h" // Include the main Game class header
-#include <SDL2/SDL_log.h> // For logging start/end
+#include <SDL_log.h> // For logging start/end
 #include <exception> // For exception handling
 
 int main(int /*argc*/, char* /*argv*/[]) { // Mark args as unused if needed

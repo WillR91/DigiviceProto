@@ -2,7 +2,7 @@
 #define PC_DISPLAY_H
 
 #include "platform/IDisplay.h" // <<< Include the interface
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <vector>
 #include <stdint.h> // Ensure uint types are included
 

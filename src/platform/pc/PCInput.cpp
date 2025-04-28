@@ -1,5 +1,5 @@
 #include "platform/pc/PCInput.h" // <<< Include correct header
-#include <SDL2/SDL_log.h>
+#include <SDL_log.h>
 
 PCInput::PCInput() : quitRequested(false) {
     // --- Define Key Mappings ---

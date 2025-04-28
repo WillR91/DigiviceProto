@@ -2,7 +2,7 @@
 #define PC_INPUT_H
 
 #include "platform/IInput.h" // <<< Include the interface
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <unordered_map>
 #include <unordered_set>
 

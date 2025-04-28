@@ -1,7 +1,7 @@
 #ifndef IINPUT_H
 #define IINPUT_H
 
-#include <SDL2/SDL_keycode.h> // Include SDL keycodes for PCInput convenience
+#include <SDL_keycode.h>
 
 // Define generic input actions
 enum class InputAction {
